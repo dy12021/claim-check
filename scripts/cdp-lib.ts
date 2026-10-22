@@ -122,16 +122,24 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-/** 等某个条件成立（轮询）。 */
-export async function waitFor(
-  fn: () => Promise<boolean>,
+/**
+ * 等某个条件成立（轮询）。
+ *
+ * **返回回调的值**，不是布尔值——早期版本返回 `true`，
+ * 结果「等到了什么内容」被丢掉了，只剩一个 true，
+ * 看起来像成功，其实什么都没验到。
+ * 超时返回 null（与「回调返回了空字符串」区分得开）。
+ */
+export async function waitFor<T>(
+  fn: () => Promise<T | null | undefined | false>,
   timeoutMs = 20000,
   everyMs = 400,
-): Promise<boolean> {
+): Promise<T | null> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    if (await fn()) return true;
+    const v = await fn();
+    if (v !== null && v !== undefined && v !== false) return v as T;
     await sleep(everyMs);
   }
-  return false;
+  return null;
 }

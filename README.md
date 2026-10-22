@@ -129,7 +129,8 @@ npm test            # vitest run
 npm run build       # vite build
 npm run verify      # 构建产物闸门：manifest 引用路径 / 权限红线 / 无 eval
 npm run scan:secrets  # 敏感数据与本机路径扫描
-npm run e2e         # 端到端真机验证（需自行准备浏览器与 LLM 配置）
+npm run e2e         # 主链路真机验证（划词 → 右键 → 分析 → 断言结果页）
+npm run e2e:ui      # 界面真机验证（设置面板 + 结果页的交互按钮）
 ```
 
 ### 闸门
@@ -140,6 +141,11 @@ npm run e2e         # 端到端真机验证（需自行准备浏览器与 LLM �
 - `npm run scan:secrets` —— 开源前扫本机绝对路径、API Key、邮箱、私钥块。
   规则写在代码里，每次提交都能自动跑；确认是误报的写进
   `scripts/sensitive-allow.txt`。
+- `npm run typecheck` —— 分两遍跑：`tsc --noEmit` 管扩展源码（浏览器环境，
+  **不引入 node 类型**，免得 `src/` 里不小心用了 Node API），
+  `tsc --noEmit -p tsconfig.scripts.json` 管 `scripts/` 下的真机验证脚本。
+  验证脚本本身也出过 bug（`waitFor` 返回布尔值而不是回调的值，
+  结果「等到了什么」被丢掉了），所以它们也纳入类型检查。
 - `npm run e2e` —— 真机跑一遍完整链路：装扩展 → **真实鼠标划词** → 右键 →
   分析 → 读结果页的 DOM 逐项断言。脚本用 CDP 驱动浏览器，
   需要指定两样东西：
@@ -150,6 +156,13 @@ npm run e2e         # 端到端真机验证（需自行准备浏览器与 LLM �
   # 浏览器与端口
   BROWSER=edge CDP_PORT=9346 npx tsx scripts/e2e.ts
   ```
+
+- `npm run e2e:ui` —— 验**设置面板**和结果页的交互按钮。
+  这条不能省：`e2e` 是直接往 storage 注入配置绕过面板的，
+  面板本身坏没坏它测不到——而面板是用户配置扩展的**唯一入口**，坏了等于没装。
+  验的是：表单回填、**API Key 不回显**、「测试连通性」真打通 LLM、
+  「保存」写回且空 Key 表示沿用、「清空历史」真清、
+  结果页的「历史」与「复制结论」按钮有响应。
 
   脚本里**不写死任何本机路径**——路径一律从环境变量来。
 

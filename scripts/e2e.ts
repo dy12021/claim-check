@@ -415,9 +415,9 @@ async function readResultPage(): Promise<any> {
       const done = await cdp.eval(
         `(() => { const b = document.getElementById('verdictBox'); return !!(b && !b.hidden); })()`,
       );
-      return !!done;
+      return done === true ? true : null;
     }, 240000, 2000);
-    check(ready, '结果页在 4 分钟内给出了结论');
+    check(ready === true, '结果页在 4 分钟内给出了结论');
 
     const info = await cdp.eval(`(() => {
       const t = (id) => (document.getElementById(id) || {}).textContent || '';
