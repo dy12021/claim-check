@@ -164,12 +164,14 @@ async function main(): Promise<void> {
   // 看门狗：LLM 调用可能很慢，但不该无限期挂着。
   // 卡住时带着「跑到哪一步了」退出，比无声挂起好排查。
   const WATCHDOG_MS = 10 * 60 * 1000;
+  let step = '启动';
   const watchdog = setTimeout(() => {
-    console.error('看门狗：超过 ' + WATCHDOG_MS / 1000 + 's 仍未结束，强制退出');
+    console.error('看门狗：超过 ' + WATCHDOG_MS / 1000 + 's 仍未结束，卡在【' + step + '】');
     process.exit(2);
   }, WATCHDOG_MS);
 
   console.log('[1/5] 启动浏览器 + 装扩展');
+  step = '启动浏览器';
   await launchBrowser();
   await loadExtension();
 
@@ -192,6 +194,7 @@ async function main(): Promise<void> {
   console.log('  已注入');
 
   console.log('\n[3/5] 打开设置面板');
+  step = '打开设置面板';
   const popup = await openTab(`chrome-extension://${EXT_ID}/src/popup/index.html`);
   await sleep(1500);
 
@@ -302,6 +305,7 @@ async function main(): Promise<void> {
   console.log('  面板截图：' + SHOT_POPUP);
 
   console.log('\n[5/5] 结果页的交互按钮：历史 / 复制结论');
+  step = '打开结果页';
   // 造一条完整的记录，让结果页有东西可显示
   await swEval(`(async () => {
     await chrome.storage.local.set({ history: [{
@@ -320,6 +324,7 @@ async function main(): Promise<void> {
   })()`);
 
   const result = await openTab(`chrome-extension://${EXT_ID}/src/result/index.html?id=ui-1`);
+  step = '读结果页';
   await sleep(2000);
   // 让页面获得焦点，否则剪贴板写入会被拒
   await result.send('Page.bringToFront');
@@ -365,6 +370,7 @@ async function main(): Promise<void> {
 
   // 记录被清掉后再打开结果页：必须如实说「找不到」，不能白屏或假装还在
   const gone = await openTab(`chrome-extension://${EXT_ID}/src/result/index.html?id=not-exist`);
+  step = '读「记录不存在」的结果页';
   await sleep(2000);
   const goneStatus = String(
     await gone.eval(`(document.getElementById('status')||{}).textContent || ''`),

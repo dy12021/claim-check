@@ -71,11 +71,34 @@ export class Cdp {
     });
   }
 
-  static async connect(url: string): Promise<Cdp> {
+  /**
+   * 连一个调试目标。
+   *
+   * **必须有超时**：实测 Edge 上某个 page target 的 WebSocket 会一直不 open，
+   * 而 `new WebSocket()` 既不报 error 也不 open——连接就永远挂着，
+   * 脚本卡在一个 await 上不动，只能靠外部杀进程。
+   * 所以这里自己加一道墙：连不上就抛，让调用方走降级或报错，
+   * 而不是无声挂起。
+   */
+  static async connect(url: string, timeoutMs = 15000): Promise<Cdp> {
     const ws = new WebSocket(url);
     await new Promise<void>((resolve, reject) => {
-      ws.addEventListener('open', () => resolve(), { once: true });
-      ws.addEventListener('error', () => reject(new Error('ws error')), { once: true });
+      const timer = setTimeout(() => {
+        reject(new Error(`连接调试目标超时（${timeoutMs}ms）：${url}`));
+        try {
+          ws.close();
+        } catch {
+          /* 已经断了就算了 */
+        }
+      }, timeoutMs);
+      ws.addEventListener('open', () => {
+        clearTimeout(timer);
+        resolve();
+      }, { once: true });
+      ws.addEventListener('error', () => {
+        clearTimeout(timer);
+        reject(new Error('ws error'));
+      }, { once: true });
     });
     return new Cdp(ws);
   }
