@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>正误分析</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="head">
+      <div class="head-left">
+        <span class="logo">正误分析</span>
+        <span class="sub" id="subtitle">加载中…</span>
+      </div>
+      <div class="head-right">
+        <button type="button" class="btn" id="copyBtn">复制结论</button>
+        <button type="button" class="btn" id="historyBtn">历史</button>
+      </div>
+    </header>
+
+    <main class="wrap" id="main">
+      <section class="quote-box">
+        <div class="quote-label">划选的原文</div>
+        <blockquote id="quote"></blockquote>
+        <div class="quote-src" id="quoteSrc"></div>
+      </section>
+
+      <div id="status" class="status-box"></div>
+
+      <section id="verdictBox" class="verdict-box" hidden>
+        <div class="verdict-head">
+          <span class="verdict-label" id="verdictLabel"></span>
+          <span class="verdict-conf" id="verdictConf"></span>
+        </div>
+        <p class="verdict-text" id="verdictText"></p>
+        <div class="meter"><i id="verdictMeter"></i></div>
+      </section>
+
+      <section id="analysisBox" class="card" hidden>
+        <h2>分析</h2>
+        <div class="prose" id="analysis"></div>
+      </section>
+
+      <div class="two-col">
+        <section id="claimsBox" class="card" hidden>
+          <h2>这段话的主张</h2>
+          <ul class="list" id="claims"></ul>
+        </section>
+
+        <section id="issuesBox" class="card" hidden>
+          <h2>可能的逻辑问题</h2>
+          <ul class="list" id="issues"></ul>
+        </section>
+      </div>
+
+      <div class="two-col">
+        <section id="assumptionsBox" class="card" hidden>
+          <h2>没说出口的前提</h2>
+          <ul class="list" id="assumptions"></ul>
+        </section>
+
+        <section id="missingBox" class="card" hidden>
+          <h2>还缺什么证据</h2>
+          <ul class="list" id="missing"></ul>
+        </section>
+      </div>
+
+      <div class="two-col">
+        <section id="supportedBox" class="card" hidden>
+          <h2>有支撑的部分</h2>
+          <ul class="list" id="supported"></ul>
+        </section>
+
+        <section id="challengedBox" class="card" hidden>
+          <h2>存疑的部分</h2>
+          <ul class="list" id="challenged"></ul>
+        </section>
+      </div>
+
+      <section id="notCoveredBox" class="card" hidden>
+        <h2>证据没覆盖、无法判断</h2>
+        <ul class="list" id="notCovered"></ul>
+      </section>
+
+      <section id="sourcesBox" class="card" hidden>
+        <h2>深度搜索到的资料</h2>
+        <div class="sources-meta" id="sourcesMeta"></div>
+        <ol class="sources" id="sources"></ol>
+      </section>
+
+      <section id="followUpsBox" class="card" hidden>
+        <h2>值得继续查的问题</h2>
+        <ul class="list" id="followUps"></ul>
+      </section>
+
+      <section id="historyBox" class="card" hidden>
+        <h2>历史分析</h2>
+        <ul class="history" id="history"></ul>
+      </section>
+    </main>
+
+    <script type="module" src="./result.ts"></script>
+  </body>
+</html>

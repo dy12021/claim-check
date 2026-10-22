@@ -1,0 +1,26 @@
+{
+  "name": "claim-check",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "划词后一键分析正误：找出可能的逻辑问题、深度搜索、给出公正客观的结论",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "verify": "tsx scripts/verify-dist.ts",
+    "scan:secrets": "tsx scripts/scan-sensitive.ts",
+    "e2e": "tsx scripts/e2e.ts"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.21",
+    "@types/chrome": "0.0.266",
+    "jsdom": "25.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "5.5.2",
+    "vite": "5.4.1",
+    "vitest": "2.1.1"
+  }
+}

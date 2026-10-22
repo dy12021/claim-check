@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>正误分析 · 设置</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="head">
+      <h1>正误分析</h1>
+      <p class="sub">在任意网页划选文字，右键即可分析正误</p>
+    </header>
+
+    <section class="block">
+      <h2>LLM 配置</h2>
+      <p class="hint">
+        你的 Key 只保存在本机浏览器（<code>chrome.storage.local</code>），
+        不上传任何服务器。请求由浏览器直连你填的服务商。
+      </p>
+
+      <label class="field">
+        <span class="field-label">服务商协议</span>
+        <select id="provider">
+          <option value="openai">OpenAI 兼容（MiniMax / DeepSeek / Kimi / Qwen…）</option>
+          <option value="anthropic">Anthropic（Claude）</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Base URL</span>
+        <input type="text" id="baseUrl" placeholder="https://api.minimax.cn/v1" spellcheck="false" />
+      </label>
+
+      <label class="field">
+        <span class="field-label">模型名</span>
+        <input type="text" id="model" placeholder="MiniMax-M3.1-Flash / gpt-4o-mini / claude-3-5-haiku" spellcheck="false" />
+      </label>
+
+      <label class="field">
+        <span class="field-label">API Key</span>
+        <input type="password" id="apiKey" placeholder="粘贴你的 Key" spellcheck="false" />
+        <span class="hint" id="keyState"></span>
+      </label>
+
+      <label class="field">
+        <span class="field-label">
+          最大输出 token
+          <span class="hint inline">推理模型需要给思考留空间，8192 是稳妥值</span>
+        </span>
+        <input type="number" id="maxTokens" min="256" step="256" value="8192" />
+      </label>
+
+      <label class="field">
+        <span class="field-label">
+          推理强度
+          <span class="hint inline">
+            抽取与判断是简单活，深度思考纯属浪费。调低能快一个数量级
+            （实测 4.8s vs 20–70s）。
+          </span>
+        </span>
+        <select id="reasoningEffort">
+          <option value="low">低（推荐，最快）</option>
+          <option value="medium">中</option>
+          <option value="high">高</option>
+          <option value="">不设置（服务商不支持时选这个）</option>
+        </select>
+      </label>
+
+      <label class="switch-row">
+        <input type="checkbox" id="enableSearch" />
+        <span class="switch-label">
+          深度搜索
+          <span class="hint">用 Bing 检索与原文相关的资料，作为判断依据</span>
+        </span>
+      </label>
+
+      <div class="row">
+        <button type="button" class="btn btn-primary" id="saveBtn">保存配置</button>
+        <button type="button" class="btn" id="testBtn">测试连通性</button>
+      </div>
+      <p class="status" id="status"></p>
+    </section>
+
+    <section class="block">
+      <h2>隐私</h2>
+      <ul class="notes">
+        <li>插件**不读任何网页内容**——只有你自己划选并右键的文本才会被分析。</li>
+        <li>请求包含两处：发给你配置的 LLM 服务商的（划选文本 + 检索到的资料摘要），以及检索词发给 Bing。</li>
+        <li>API Key、历史记录都只存在本机；换浏览器/清缓存就没了。</li>
+      </ul>
+      <div class="row">
+        <button type="button" class="btn btn-ghost" id="clearHistoryBtn">清空历史记录</button>
+      </div>
+    </section>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

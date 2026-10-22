@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "正误分析",
+  "version": "0.1.0",
+  "description": "在任意网页上划选文字，右键一键分析正误：找出可能的逻辑问题、深度搜索、给出公正客观的结论。",
+  "minimum_chrome_version": "114",
+  "permissions": ["storage", "contextMenus"],
+  "host_permissions": ["https://*.bing.com/*"],
+  "background": {
+    "service_worker": "src/bg/index.ts",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "src/popup/index.html"
+  },
+  "icons": {
+    "16": "icon-16.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
+  }
+}
