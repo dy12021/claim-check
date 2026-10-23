@@ -14,6 +14,42 @@ export interface AnalysisInput {
   pageTitle?: string;
 }
 
+/**
+ * 这一条记录是干什么的。
+ *
+ * - `verify`：分析正误（原来的功能）
+ * - `polish`：美化表达（去掉情绪化说法，还原实际含义）
+ *
+ * 老记录没有这个字段，一律当 `verify` 处理。
+ */
+export type AnalysisKind = 'verify' | 'polish';
+
+/**
+ * 「美化」的结果。
+ *
+ * 目标不是把话说得好听，而是**把话说清楚**：
+ * 情绪化的说法去掉之后，主张还是那个主张，但不再带情绪。
+ */
+export interface PolishResult {
+  /** 原文的情绪基调（一句话） */
+  tone: string;
+  /** 情绪化用词清单：原文照抄 + 为什么算情绪化 */
+  emotional: { word: string; why: string }[];
+  /** 去掉情绪后，这段话实际在主张什么 */
+  meaning: string;
+  /** 去掉情绪化表达后的版本（可以直接拿去用） */
+  rewritten: string;
+  /**
+   * 改写版里**还留着**的情绪化表达。
+   *
+   * 为什么要有这个字段：模型偶尔会一边把「恶心人」列进情绪用词、
+   * 一边把「恶心人」原样留在改写版里——这属于**自相矛盾**，
+   * 而且可以在本地确定性地查出来（见 polish.ts 的 findLeftoverEmotional）。
+   * 查出来就带着它重写一次；还改不掉就如实告诉用户。
+   */
+  leftover?: string[];
+}
+
 /** 这段文字属于哪一类。 */
 export type StatementKind =
   | 'argument' // 论证：有主张也有理由
@@ -92,6 +128,8 @@ export interface Pass2Result {
 export interface AnalysisRecord {
   id: string;
   createdAt: string;
+  /** 这一条是「分析正误」还是「美化表达」。老记录没这个字段，当 verify 处理。 */
+  kind?: AnalysisKind;
   input: AnalysisInput;
   pass1: Pass1Result | null;
   search: {
@@ -101,6 +139,8 @@ export interface AnalysisRecord {
     error?: string;
   };
   pass2: Pass2Result | null;
+  /** 「美化」的结果。只有 kind='polish' 时有。 */
+  polish?: PolishResult | null;
   /** 整体失败原因 */
   error?: string;
 }

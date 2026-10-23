@@ -30,7 +30,10 @@ function text(v: string): void {
 
 /** 记录看起来是不是还在跑（占位记录：两个阶段都空、也没报错）。 */
 function isPending(rec: AnalysisRecord): boolean {
-  return !rec.error && !rec.pass1 && !rec.pass2;
+  if (rec.error) return false;
+  // 美化档只有 polish 一个字段可等；正误档等两个阶段。
+  if (rec.kind === 'polish') return !rec.polish;
+  return !rec.pass1 && !rec.pass2;
 }
 
 function fmtWhen(iso: string): string {
@@ -52,7 +55,10 @@ const VERDICT_CLASS: Record<Verdict, string> = {
 };
 
 function render(rec: AnalysisRecord): void {
-  el('subtitle').textContent = rec.input.pageTitle ?? '正误分析';
+  const isPolish = rec.kind === 'polish';
+  el('subtitle').textContent = isPolish
+    ? '美化表达'
+    : (rec.input.pageTitle ?? '正误分析');
   text(rec.input.text);
   el('quoteSrc').textContent = rec.input.pageUrl ?? '';
 
@@ -64,10 +70,32 @@ function render(rec: AnalysisRecord): void {
     show('status', true);
   } else if (isPending(rec)) {
     status.className = 'status-box busy';
-    status.textContent = '分析中…（解析结构 → 深度搜索 → 综合判断）';
+    status.textContent = isPolish
+      ? '美化中…（去掉情绪化表达 → 还原实际含义）'
+      : '分析中…（解析结构 → 深度搜索 → 综合判断）';
     show('status', true);
   } else {
     show('status', false);
+  }
+
+  // 复制按钮：美化档复制「改写后文本」，正误档复制整份结论。
+  const copyBtn = el('copyBtn');
+  copyBtn.textContent = isPolish ? '复制改写后文本' : '复制结论';
+  copyBtn.onclick = () => {
+    if (isPolish) {
+      void copyText(rec.polish?.rewritten ?? '', copyBtn, '已复制 ✓', '复制改写后文本');
+      return;
+    }
+    void copyText(buildPlainText(rec), copyBtn, '已复制 ✓', '复制结论');
+  };
+  el('copyRewritten').onclick = () => {
+    void copyText(rec.polish?.rewritten ?? '', el('copyRewritten'), '已复制 ✓', '复制这段');
+  };
+
+  if (isPolish) {
+    // 美化档：正误分析那些区块一律不显示。
+    renderPolish(rec);
+    return;
   }
 
   // 结论
@@ -144,11 +172,46 @@ function render(rec: AnalysisRecord): void {
     el('sourcesMeta').textContent = `深度搜索没成功：${rec.search.error}（结论仅基于原文）`;
     show('sourcesBox', true);
   }
+}
 
-  // 复制
-  el('copyBtn').onclick = () => {
-    void copyText(buildPlainText(rec));
-  };
+/**
+ * 渲染「美化」的结果。
+ *
+ * 顺序是有讲究的：**先说这段话实际在说什么，再给可直接用的改写版**，
+ * 最后才是情绪用词清单——用户要的是「我该怎么说」，不是「你哪里不对」。
+ */
+function renderPolish(rec: AnalysisRecord): void {
+  const p = rec.polish;
+  if (!p) return;
+
+  if (p.meaning) {
+    el('polishMeaning').textContent = p.meaning;
+    show('polishMeaningBox', true);
+  }
+  if (p.rewritten) {
+    el('polishRewritten').textContent = p.rewritten;
+    show('polishRewriteBox', true);
+  }
+  // 漏改的情绪词（如实说，别装作改干净了）
+  if (p.leftover?.length) {
+    el('polishLeftover').textContent =
+      `注意：还有 ${p.leftover.length} 处情绪化表达没能换掉（${p.leftover.join('、')}），` +
+      '可以手动改一下再用。';
+    show('polishLeftover', true);
+  }
+  if (p.tone) {
+    el('polishTone').textContent = p.tone;
+    show('polishToneBox', true);
+  }
+  if (p.emotional.length) {
+    el('polishEmotional').innerHTML = p.emotional
+      .map(
+        (e) =>
+          `<li><span class="type">${escapeHtml(e.word)}</span>${escapeHtml(e.why)}</li>`,
+      )
+      .join('');
+    show('polishEmotionalBox', true);
+  }
 }
 
 function fillList(id: string, items: string[]): void {
@@ -173,14 +236,18 @@ function fillPoints(id: string, items: { point: string; evidence: string }[]): v
 /** 拼一份纯文本结论，方便用户复制走。 */
 export { buildPlainText };
 
-async function copyText(t: string): Promise<void> {
+async function copyText(
+  t: string,
+  btn: HTMLElement,
+  doneText: string,
+  resetText: string,
+): Promise<void> {
   try {
     await navigator.clipboard.writeText(t);
-    const btn = el('copyBtn');
-    btn.textContent = '已复制 ✓';
-    setTimeout(() => { btn.textContent = '复制结论'; }, 1600);
+    btn.textContent = doneText;
+    setTimeout(() => { btn.textContent = resetText; }, 1600);
   } catch {
-    el('copyBtn').textContent = '复制失败';
+    btn.textContent = '复制失败';
   }
 }
 
@@ -207,7 +274,7 @@ async function loadHistory(): Promise<void> {
       resolve(r);
     });
   });
-  const list = (resp as { data?: { id: string; createdAt: string; input: { text: string } }[] })
+  const list = (resp as { data?: { id: string; createdAt: string; kind?: string; input: { text: string } }[] })
     ?.data ?? [];
   if (!list.length) {
     el('history').innerHTML = '<li class="ev">还没有历史记录</li>';
@@ -215,9 +282,12 @@ async function loadHistory(): Promise<void> {
     el('history').innerHTML = list
       .map(
         (r) =>
-          `<li><a href="?id=${encodeURIComponent(r.id)}">${escapeHtml(
-            r.input.text.slice(0, 60),
-          )}${r.input.text.length > 60 ? '…' : ''}</a>` +
+          `<li><a href="?id=${encodeURIComponent(r.id)}">` +
+          `<span class="kind ${r.kind === 'polish' ? 'kind-polish' : ''}">${
+            r.kind === 'polish' ? '美化' : '分析'
+          }</span>` +
+          `${escapeHtml(r.input.text.slice(0, 60))}` +
+          `${r.input.text.length > 60 ? '…' : ''}</a>` +
           `<span class="when">${fmtWhen(r.createdAt)}</span></li>`,
       )
       .join('');

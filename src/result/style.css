@@ -138,6 +138,38 @@ body {
 /* ---------- 正文与列表 ---------- */
 .prose { white-space: pre-wrap; font-size: 14px; color: var(--ink); }
 
+/* ---------- 美化 ---------- */
+.card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 10px;
+}
+.card-head h2 { margin: 0; }
+
+/* 改写后的版本：要显眼——这是用户要拿走的那段话。 */
+.rewrite {
+  padding: 12px 14px;
+  background: var(--quote);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 15px;
+  color: var(--ink);
+}
+.note { margin: 8px 0 0; font-size: 12px; color: var(--ink-3); }
+.warn { margin: 8px 0 0; font-size: 12px; color: var(--warn); }
+
+.history .kind {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: #eef1f4;
+  color: var(--ink-3);
+  font-size: 11px;
+}
+.history .kind-polish { background: #fdeef3; color: #b8436b; }
+
 .list { margin: 0; padding-left: 18px; font-size: 13px; }
 .list li { margin: 5px 0; }
 .list .q {

@@ -9,8 +9,9 @@ import {
   clearHistory,
 } from './storage';
 import { runAnalysis } from './analyze';
+import { runPolish } from './polish';
 import { MAX_INPUT_CHARS } from '../shared/constants';
-import type { AnalysisInput } from '../shared/types';
+import type { AnalysisInput, AnalysisRecord } from '../shared/types';
 
 /**
  * Service worker 入口。
@@ -24,6 +25,8 @@ import type { AnalysisInput } from '../shared/types';
  */
 
 const MENU_ID = 'claim-check-analyze';
+/** 「美化表达」菜单项。与正误分析共用「划选即触发」的路子。 */
+const MENU_ID_POLISH = 'claim-check-polish';
 
 /** 装右键菜单。service worker 每次被唤醒都会重跑这段，所以要先删再建。 */
 function installMenu(): void {
@@ -32,6 +35,13 @@ function installMenu(): void {
       chrome.contextMenus.create({
         id: MENU_ID,
         title: '分析正误：%s',
+        contexts: ['selection'],
+      });
+      // 美化：去情绪化 + 还原实际含义。
+      // 标题不带 %s——选中的内容通常很长，菜单里塞不下。
+      chrome.contextMenus.create({
+        id: MENU_ID_POLISH,
+        title: '美化表达',
         contexts: ['selection'],
       });
     });
@@ -61,10 +71,15 @@ async function openResult(id: string): Promise<void> {
 }
 
 chrome.contextMenus.onClicked.addListener((info) => {
-  if (info.menuItemId !== MENU_ID) return;
   const text = (info.selectionText ?? '').trim();
   if (!text) return;
-  void handleAnalyze(text, info.pageUrl);
+  if (info.menuItemId === MENU_ID) {
+    void handleAnalyze(text, info.pageUrl);
+    return;
+  }
+  if (info.menuItemId === MENU_ID_POLISH) {
+    void handlePolish(text, info.pageUrl);
+  }
 });
 
 /**
@@ -91,6 +106,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         data: list.map((r) => ({
           id: r.id,
           createdAt: r.createdAt,
+          kind: r.kind ?? 'verify',
           input: { text: r.input.text },
         })),
       });
@@ -200,4 +216,50 @@ async function handleAnalyze(text: string, pageUrl?: string): Promise<void> {
   const client = createLlmClient(cfg);
   const record = await runAnalysis(id, input, settings, client);
   await pushHistory(record);
+}
+
+/**
+ * 「美化表达」：去情绪化 + 还原实际含义。
+ *
+ * 跟正误分析走同一套结果页与历史，只是记录类型不同（kind='polish'）、
+ * 而且**不做深度搜索**——这段话不需要外部证据。
+ *
+ * 典型用法：在 B 站评论区里写完一段评论，划选自己写的草稿 → 右键「美化表达」
+ * → 复制改写后的版本 → 粘回输入框。
+ */
+async function handlePolish(text: string, pageUrl?: string): Promise<void> {
+  const id = newId();
+  const input: AnalysisInput = {
+    text: text.slice(0, MAX_INPUT_CHARS),
+    ...(pageUrl ? { pageUrl } : {}),
+  };
+
+  const cfg = await getLlmConfig();
+  const base: AnalysisRecord = {
+    id,
+    createdAt: new Date().toISOString(),
+    kind: 'polish',
+    input,
+    pass1: null,
+    search: { hits: [], queries: [] },
+    pass2: null,
+    polish: null,
+  };
+
+  if (!cfg) {
+    await pushHistory({
+      ...base,
+      error: '还没配置 LLM：点扩展图标填入 API Key 后再试。',
+    });
+    await openResult(id);
+    return;
+  }
+
+  // 占位记录：结果页先显示「美化中…」
+  await pushHistory(base);
+  await openResult(id);
+
+  const client = createLlmClient(cfg);
+  const { result, error } = await runPolish(input, client);
+  await pushHistory({ ...base, polish: result, error });
 }

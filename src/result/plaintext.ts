@@ -7,6 +7,9 @@ import type { AnalysisRecord } from '../shared/types';
  * 在 node 环境下没法直接测。
  */
 export function buildPlainText(rec: AnalysisRecord): string {
+  // 美化档的结构完全不同，单独拼。
+  if (rec.kind === 'polish') return buildPolishText(rec);
+
   const lines: string[] = [];
   lines.push('【划选的原文】');
   lines.push(rec.input.text);
@@ -43,6 +46,41 @@ export function buildPlainText(rec: AnalysisRecord): string {
     for (const h of rec.search.hits) lines.push(`· ${h.title} —— ${h.url}`);
   }
   lines.push('');
+  lines.push('（由「正误分析」扩展生成，仅供参考，不构成专业意见）');
+  return lines.join('\n');
+}
+
+/**
+ * 美化档的纯文本导出。
+ *
+ * 顺序跟页面一致：先说实际含义，再给可直接用的改写版。
+ */
+function buildPolishText(rec: AnalysisRecord): string {
+  const p = rec.polish;
+  const lines: string[] = [];
+  lines.push('【划选的原文】');
+  lines.push(rec.input.text);
+  lines.push('');
+  if (p?.meaning) {
+    lines.push('【这段话实际在说什么】');
+    lines.push(p.meaning);
+    lines.push('');
+  }
+  if (p?.rewritten) {
+    lines.push('【去掉情绪化表达后】');
+    lines.push(p.rewritten);
+    lines.push('');
+  }
+  if (p?.emotional.length) {
+    lines.push('【情绪化用词】');
+    for (const e of p.emotional) lines.push(`· ${e.word}：${e.why}`);
+    lines.push('');
+  }
+  if (p?.tone) {
+    lines.push('【原文的情绪基调】');
+    lines.push(p.tone);
+    lines.push('');
+  }
   lines.push('（由「正误分析」扩展生成，仅供参考，不构成专业意见）');
   return lines.join('\n');
 }

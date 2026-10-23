@@ -14,7 +14,9 @@
     "scan:secrets": "tsx scripts/scan-sensitive.ts",
     "e2e": "tsx scripts/e2e.ts",
     "e2e:ui": "tsx scripts/e2e-ui.ts",
-    "e2e:firstrun": "tsx scripts/e2e-firstrun.ts"
+    "e2e:firstrun": "tsx scripts/e2e-firstrun.ts",
+    "e2e:polish": "tsx scripts/e2e-polish.ts",
+    "probe:polish": "tsx scripts/probe-polish.ts"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.21",

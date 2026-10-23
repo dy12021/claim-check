@@ -27,6 +27,32 @@
 
       <div id="status" class="status-box"></div>
 
+      <!-- 美化（kind=polish） -->
+      <section id="polishMeaningBox" class="card" hidden>
+        <h2>这段话实际在说什么</h2>
+        <p class="prose" id="polishMeaning"></p>
+      </section>
+
+      <section id="polishRewriteBox" class="card" hidden>
+        <div class="card-head">
+          <h2>去掉情绪化表达后</h2>
+          <button type="button" class="btn" id="copyRewritten">复制这段</button>
+        </div>
+        <div class="rewrite" id="polishRewritten"></div>
+        <p class="warn" id="polishLeftover" hidden></p>
+        <p class="note">立场没变，只是把情绪化的说法换掉了。复制后粘回原来的输入框就能用。</p>
+      </section>
+
+      <section id="polishToneBox" class="card" hidden>
+        <h2>原文的情绪基调</h2>
+        <p class="prose" id="polishTone"></p>
+      </section>
+
+      <section id="polishEmotionalBox" class="card" hidden>
+        <h2>情绪化用词</h2>
+        <ul class="list" id="polishEmotional"></ul>
+      </section>
+
       <section id="verdictBox" class="verdict-box" hidden>
         <div class="verdict-head">
           <span class="verdict-label" id="verdictLabel"></span>
